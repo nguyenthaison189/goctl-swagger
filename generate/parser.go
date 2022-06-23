@@ -203,6 +203,9 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				// Sonnt update delete method in http param query
 				if strings.ToUpper(route.Method) == http.MethodGet || strings.ToUpper(route.Method) == http.MethodDelete {
 					for _, member := range defineStruct.Members {
+						if strings.Contains(member.Tag, "header") {
+							continue
+						}
 						if strings.Contains(member.Tag, "path") {
 							continue
 						}
