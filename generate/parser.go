@@ -144,7 +144,7 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 				for _, member := range defineStruct.Members {
 					if member.Name == "" {
 						memberDefineStruct, _ := member.Type.(spec.DefineStruct)
-						for _,m:=range memberDefineStruct.Members{
+						for _, m := range memberDefineStruct.Members {
 							if strings.Contains(m.Tag, "header") {
 								tempKind := swaggerMapTypes[strings.Replace(m.Type.Name(), "[]", "", -1)]
 
@@ -200,7 +200,8 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 						continue
 					}
 				}
-				if strings.ToUpper(route.Method) == http.MethodGet {
+				// Sonnt update delete method in http param query
+				if strings.ToUpper(route.Method) == http.MethodGet || strings.ToUpper(route.Method) == http.MethodDelete {
 					for _, member := range defineStruct.Members {
 						if strings.Contains(member.Tag, "path") {
 							continue
@@ -259,6 +260,8 @@ func renderServiceRoutes(service spec.Service, groups []spec.Group, paths swagge
 
 						parameters = append(parameters, sp)
 					}
+					//} else if strings.ToUpper(route.Method) == http.MethodDelete {
+
 				} else {
 
 					reqRef := fmt.Sprintf("#/definitions/%s", route.RequestType.Name())
@@ -375,21 +378,22 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			if hasPathParameters(member) {
 				continue
 			}
+
 			kv := keyVal{Value: schemaOfField(member)}
 			kv.Key = member.Name
 			if tag, err := member.GetPropertyName(); err == nil {
 				kv.Key = tag
 			}
-			if kv.Key == ""{
-				memberStruct ,_ := member.Type.(spec.DefineStruct)
-				for _,  m:=range memberStruct.Members{
+			if kv.Key == "" {
+				memberStruct, _ := member.Type.(spec.DefineStruct)
+				for _, m := range memberStruct.Members {
 					if strings.Contains(m.Tag, "header") {
 						continue
 					}
 
 					mkv := keyVal{
-						Value:schemaOfField(m),
-						Key: m.Name,
+						Value: schemaOfField(m),
+						Key:   m.Name,
 					}
 
 					if tag, err := m.GetPropertyName(); err == nil {
@@ -405,7 +409,11 @@ func renderReplyAsDefinition(d swaggerDefinitionsObject, m messageMap, p []spec.
 			if schema.Properties == nil {
 				schema.Properties = &swaggerSchemaObjectProperties{}
 			}
-			*schema.Properties = append(*schema.Properties, kv)
+			// Sonnt remove header parser value in doc
+			if !strings.Contains(member.Tag, "header") {
+
+				*schema.Properties = append(*schema.Properties, kv)
+			}
 
 			for _, tag := range member.Tags() {
 				if len(tag.Options) == 0 {
